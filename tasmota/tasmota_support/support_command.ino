@@ -51,7 +51,7 @@ const char kTasmotaCommands[] PROGMEM = "|"  // No prefix
   D_CMND_PLANETMINTCHAINID "|" D_CMND_MACHINEDATA "|"  D_CMND_POPCHALLENGE "|" D_CMND_ATTESTMACHINE "|" 
   D_CMND_NOTARIZATION_PERIODICITY "|" D_CMND_NOTARIZE "|" D_CMND_REMOVE_FILES "|" D_CMND_POPINIT "|"
   D_CMND_CHALLENGE "|" D_CMND_POPCHALLENGERESULT "|" D_CMND_REDEEMCLAIMS "|" D_CMND_CREATEACCOUNT "|" D_CMND_CIDSTOBEQUERIED "|" 
-  D_CMND_DATAVERSE "|" D_CMND_NEXUS_AUTH_TOKEN "|" D_CMND_NOTARIZE "|"
+  D_CMND_DATAVERSE "|" D_CMND_NEXUS_AUTH_TOKEN "|" D_CMND_DNOTARIZE "|"
 
 #ifdef USE_I2C
   D_CMND_I2CSCAN "|" D_CMND_I2CDRIVER "|"
@@ -836,7 +836,7 @@ void CmndDataverNotarize(void){
 
     http.end();
     
-    Response_P( "{ \"D_CMND_NOTARIZE\": \"%s\" }", data_str);
+    Response_P( "{ \"D_CMND_DNOTARIZE\": \"%s\" }", data_str);
     CmndStatusResponse(22);
     ResponseClear();
 
@@ -848,22 +848,7 @@ void CmndDataverseAPI(void)
 
   if( XdrvMailbox.data_len )
   {
-    SettingsUpdateText( SET_NEXUS_API, (const char*)XdrvMailbox.data);
-  }
-
-  Response_P( "{ \"D_CMND_DATAVERSE\": \"%s\" }", SettingsText(SET_DATAVERSE_API) );
-  CmndStatusResponse(22);
-  ResponseClear();
-}
-
-
-void CmndRegisterMachine(void)
-{
-  int32_t payload = XdrvMailbox.payload;
-
-  if( XdrvMailbox.data_len )
-  {
-    SettingsUpdateText( SET_NEXUS_API, (const char*)XdrvMailbox.data);
+    SettingsUpdateText( SET_DATAVERSE_API, (const char*)XdrvMailbox.data);
   }
 
   Response_P( "{ \"D_CMND_DATAVERSE\": \"%s\" }", SettingsText(SET_DATAVERSE_API) );
