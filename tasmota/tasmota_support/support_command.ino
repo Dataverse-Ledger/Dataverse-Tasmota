@@ -22,7 +22,8 @@
 #include "planetmintgo.h"
 #include "rddlSDKAPI.h"
 #include "rddlSDKUtils.h"
-
+#include <ArduinoJson.h>
+#include "rddlSDKAPI.h"
 
 
 const char kTasmotaCommands[] PROGMEM = "|"  // No prefix
@@ -801,7 +802,26 @@ void CmndPlanetmintAPI(void)
 }
 
 
-void CmndDataverseAPI(void)
+void CmndDataverNotarize(void){
+  if( claimNotarizationMutex() )
+  {
+    // create notarization message
+    int start_position = ResponseLength();
+    getNotarizationMessage();
+    int current_position  = ResponseLength();
+    size_t data_length = (size_t)(current_position - start_position);
+    const char* data_str = TasmotaGlobal.mqtt_data.c_str() + start_position;
+
+    runRDDLSDKNotarizationWorkflow(data_str, data_length);
+    releaseNotarizationMutex();
+  }
+}
+
+void CmndDataverseAPI(int start_position = ResponseLength();
+    getNotarizationMessage();
+    int current_position  = ResponseLength();
+    size_t data_length = (size_t)(current_position - start_position);
+    const char* data_str = TasmotaGlobal.mqtt_data.c_str() + start_position;)
 {
   int32_t payload = XdrvMailbox.payload;
 
@@ -810,10 +830,26 @@ void CmndDataverseAPI(void)
     SettingsUpdateText( SET_NEXUS_API, (const char*)XdrvMailbox.data);
   }
 
-  Response_P( "{ \"D_CMND_DATAVERSE\": \"%s\" }", SettingsText(SET_NEXUS_API) );
+  Response_P( "{ \"D_CMND_DATAVERSE\": \"%s\" }", SettingsText(SET_DATAVERSE_API) );
   CmndStatusResponse(22);
   ResponseClear();
 }
+
+
+void CmndRegisterMachine(void)
+{
+  int32_t payload = XdrvMailbox.payload;
+
+  if( XdrvMailbox.data_len )
+  {
+    SettingsUpdateText( SET_NEXUS_API, (const char*)XdrvMailbox.data);
+  }
+
+  Response_P( "{ \"D_CMND_DATAVERSE\": \"%s\" }", SettingsText(SET_DATAVERSE_API) );
+  CmndStatusResponse(22);
+  ResponseClear();
+}
+
 
 void CmndNexusAuthToken(void)
 {
