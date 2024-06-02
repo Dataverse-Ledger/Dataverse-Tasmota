@@ -24,6 +24,8 @@
 #include "rddlSDKUtils.h"
 #include <ArduinoJson.h>
 #include "rddlSDKAPI.h"
+#include <HttpClient.h>
+#include "rddl_cid.h"
 
 
 const char kTasmotaCommands[] PROGMEM = "|"  // No prefix
@@ -49,7 +51,8 @@ const char kTasmotaCommands[] PROGMEM = "|"  // No prefix
   D_CMND_PLANETMINTCHAINID "|" D_CMND_MACHINEDATA "|"  D_CMND_POPCHALLENGE "|" D_CMND_ATTESTMACHINE "|" 
   D_CMND_NOTARIZATION_PERIODICITY "|" D_CMND_NOTARIZE "|" D_CMND_REMOVE_FILES "|" D_CMND_POPINIT "|"
   D_CMND_CHALLENGE "|" D_CMND_POPCHALLENGERESULT "|" D_CMND_REDEEMCLAIMS "|" D_CMND_CREATEACCOUNT "|" D_CMND_CIDSTOBEQUERIED "|" 
-  D_CMND_DATAVERSE "|" D_CMND_NEXUS_AUTH_TOKEN "|"
+  D_CMND_DATAVERSE "|" D_CMND_NEXUS_AUTH_TOKEN "|" D_CMND_NOTARIZE "|"
+
 #ifdef USE_I2C
   D_CMND_I2CSCAN "|" D_CMND_I2CDRIVER "|"
 #endif
@@ -94,7 +97,7 @@ void (* const TasmotaCommand[])(void) PROGMEM = {
   &CmndBalance, &CmdResolveCid, &CmndPlanetmintDenom, &CmndGetAccountID, 
   &CmndPlanetmintChainID, &CmndMachineData, &CmndPoPChallenge, &CmndAttestMachine,
   &CmndNotarizationPeriodicity, &CmndNotarize, &CmndRemoveFiles, &CmndPoPInit,
-  &CmndChallenge, &CmndPoPChallengeResult, &CmndRedeemClaims, &CmndCreateAccount, &CmndCIDsToBeQueried, &CmndDataverseAPI, &CmndNexusAuthToken
+  &CmndChallenge, &CmndPoPChallengeResult, &CmndRedeemClaims, &CmndCreateAccount, &CmndCIDsToBeQueried, &CmndDataverseAPI, &CmndNexusAuthToken, &CmndDataverNotarize,
 #ifdef USE_I2C
   &CmndI2cScan, &CmndI2cDriver,
 #endif
@@ -803,25 +806,43 @@ void CmndPlanetmintAPI(void)
 
 
 void CmndDataverNotarize(void){
-  if( claimNotarizationMutex() )
-  {
+  
     // create notarization message
     int start_position = ResponseLength();
-    getNotarizationMessage();
     int current_position  = ResponseLength();
     size_t data_length = (size_t)(current_position - start_position);
     const char* data_str = TasmotaGlobal.mqtt_data.c_str() + start_position;
 
-    runRDDLSDKNotarizationWorkflow(data_str, data_length);
-    releaseNotarizationMutex();
-  }
+    char* cid_str = create_cid_v1_from_string( data_str );
+
+
+    HTTPClientLight http;
+    http.begin(SettingsText(SET_DATAVERSE_API));
+    http.addHeader("Content-Type", "application/json");
+
+
+    JsonDocument doc;
+    doc["data"] = data_str;
+    doc["machine_address"] = sdkGetRDDLAddress();
+    doc["data_cid"] = cid_str;
+
+    String js;
+
+    serializeJson(doc,js);
+
+    Serial.println(js);
+
+    int httpResponseCode = http.POST(js);
+
+    http.end();
+    
+    Response_P( "{ \"D_CMND_NOTARIZE\": \"%s\" }", data_str);
+    CmndStatusResponse(22);
+    ResponseClear();
+
 }
 
-void CmndDataverseAPI(int start_position = ResponseLength();
-    getNotarizationMessage();
-    int current_position  = ResponseLength();
-    size_t data_length = (size_t)(current_position - start_position);
-    const char* data_str = TasmotaGlobal.mqtt_data.c_str() + start_position;)
+void CmndDataverseAPI(void)
 {
   int32_t payload = XdrvMailbox.payload;
 
