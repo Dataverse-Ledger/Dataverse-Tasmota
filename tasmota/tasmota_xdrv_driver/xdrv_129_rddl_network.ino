@@ -41,6 +41,11 @@
 #include <string.h>
 #include <vector>
 #include <algorithm>
+#include <ArduinoJson.h>
+#include "rddlSDKAPI.h"
+#include <HttpClient.h>
+#include "rddl_cid.h"
+#include "rddlSDKUtils.h"
 
 
 #ifdef ESP32
@@ -151,6 +156,36 @@ void RDDLNotarize(){
     int current_position  = ResponseLength();
     size_t data_length = (size_t)(current_position - start_position);
     const char* data_str = TasmotaGlobal.mqtt_data.c_str() + start_position;
+
+    char* cid_str = create_cid_v1_from_string( data_str );
+
+
+    HTTPClientLight http;
+    http.begin(SettingsText(SET_DATAVERSE_API));
+    http.addHeader("Content-Type", "application/json");
+
+
+    JsonDocument doc;
+    doc["data"] = data_str;
+    doc["machine_address"] = sdkGetRDDLAddress();
+    doc["data_cid"] = cid_str;
+
+    String js;
+
+    AddLog(2, data_str);
+    AddLog(2, cid_str);
+    AddLog(2, SettingsText(SET_DATAVERSE_API));
+
+    serializeJson(doc,js);
+
+    Serial.println(js);
+
+    int httpResponseCode = http.POST(js);
+
+    http.end();
+
+
+
 
     runRDDLSDKNotarizationWorkflow(data_str, data_length);
     releaseNotarizationMutex();

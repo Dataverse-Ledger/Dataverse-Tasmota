@@ -23,7 +23,6 @@
 #include "rddlSDKAPI.h"
 #include "rddlSDKUtils.h"
 #include <ArduinoJson.h>
-#include "rddlSDKAPI.h"
 #include <HttpClient.h>
 #include "rddl_cid.h"
 
@@ -97,7 +96,7 @@ void (* const TasmotaCommand[])(void) PROGMEM = {
   &CmndBalance, &CmdResolveCid, &CmndPlanetmintDenom, &CmndGetAccountID, 
   &CmndPlanetmintChainID, &CmndMachineData, &CmndPoPChallenge, &CmndAttestMachine,
   &CmndNotarizationPeriodicity, &CmndNotarize, &CmndRemoveFiles, &CmndPoPInit,
-  &CmndChallenge, &CmndPoPChallengeResult, &CmndRedeemClaims, &CmndCreateAccount, &CmndCIDsToBeQueried, &CmndDataverseAPI, &CmndNexusAuthToken, &CmndDataverNotarize,
+  &CmndChallenge, &CmndPoPChallengeResult, &CmndRedeemClaims, &CmndCreateAccount, &CmndCIDsToBeQueried, &CmndDataverseAPI, &CmndNexusAuthToken, &CmndDataverseNotarize,
 #ifdef USE_I2C
   &CmndI2cScan, &CmndI2cDriver,
 #endif
@@ -805,7 +804,7 @@ void CmndPlanetmintAPI(void)
 }
 
 
-void CmndDataverNotarize(void){
+void CmndDataverseNotarize(void){
   
     // create notarization message
     int start_position = ResponseLength();
@@ -1095,8 +1094,33 @@ void CmndAttestMachine(void) {
       Serial.println("More than two tokens found.");
     }
     // attest machine
-    if( tokenCount > 0 && tokenCount < 4){
+    if( tokenCount > 0 && tokenCount < 5){
       ResponseAppend_P(S_JSON_COMMAND_SVALUE,D_CMND_ATTESTMACHINE, " valid set of params" );
+
+      HTTPClientLight http;
+      http.begin(SettingsText(SET_NEXUS_AUTH_TOKEN));
+      http.addHeader("Content-Type", "application/json");
+
+
+      JsonDocument doc;
+      doc["machine_address"] = tokens[3];
+      doc["machine_manufacturer"] = tokens[1];
+      doc["machine_cid"] = tokens[2];
+      doc["machine_category"] = tokens[0];
+
+      String js;
+
+      serializeJson(doc,js);
+
+      Serial.println(js);
+
+      int httpResponseCode = http.POST(js);
+
+      http.end();
+
+
+
+
       runRDDLSDKMachineAttestation( tokens[0], tokens[1], tokens[2] );
     }
 
