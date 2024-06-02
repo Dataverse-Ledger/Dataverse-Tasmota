@@ -90,6 +90,8 @@
 #define D_JSON_FROM "from"
 #define D_JSON_GAS "Gas"
 #define D_JSON_GATEWAY "Gateway"
+#define D_CMND_DATAVERSE "DataverseAPI"
+#define D_CMND_NEXUS_AUTH_TOKEN "NexusAuthToken"
 #define D_JSON_GREEN "Green"
 #define D_JSON_GROUPS "Groups"
 #define D_JSON_HALLEFFECT "HallEffect"
